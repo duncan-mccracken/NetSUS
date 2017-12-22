@@ -157,7 +157,7 @@ if [ -f "/etc/ntp/step-tickers" ]; then
 	fi
 else
 	currentTimeServer=$(cat /etc/cron.daily/ntpdate 2>/dev/null | awk '{print $2}')
-	if [ "$currentTimeServer" != "$newTimeServer" ]]; then
+	if [ "$currentTimeServer" != "$newTimeServer" ]; then
 		echo "server $newTimeServer" > /etc/cron.daily/ntpdate
 	fi
 fi
@@ -675,7 +675,7 @@ else
 	echo "$(date '+[%Y-%m-%d %H:%M:%S]:') Enrolment complete" >> $logFile
 	/usr/local/sbin/jamfds policy > /dev/null 2>&1
 fi
-service $www_service reload 2>&-
+service $www_service reload > /dev/null 2>&1
 ;;
 
 checkin)
@@ -697,7 +697,7 @@ JSSinventory)
 #	else
 #		rm -f /etc/init/avahi-daemon.override
 #	fi
-#elif [ "$(which yum 2>&-)" != '' ]]; then
+#elif [ "$(which yum 2>&-)" != '' ]; then
 #	chkconfig messagebus on > /dev/null 2>&1
 #	service messagebus start 2>&-
 #	chkconfig avahi-daemon on > /dev/null 2>&1
@@ -729,7 +729,7 @@ if [ "$(which apt-get 2>&-)" != '' ]; then
 	else
 		rm -f /etc/init/$SERVICE.override
 	fi
-elif [ "$(which yum 2>&-)" != '' ]]; then
+elif [ "$(which yum 2>&-)" != '' ]; then
 	SERVICE=sshd
 	if [ "$(rpm -qa openssh-server)" = '' ]; then
 		yum install openssh-server -y -q
@@ -783,7 +783,7 @@ if [ -f "/etc/ssl/certs/ssl-cert-snakeoil.pem" ]; then
 	mkdir -p /etc/apache2/ssl.crt/
 	cp /var/appliance/conf/appliance.chain.pem /etc/apache2/ssl.crt/server-ca.crt
 	chown openldap /var/appliance/conf/appliance.private.key
-	sed -i "s/#SSLCertificateChainFile \/etc\/apache2\/ssl.crt\/server-ca.crt/SSLCertificateChainFile \/etc\/apache2\/ssl.crt\/server-ca.crt/g" /etc/apache2/sites-enabled/default-ssl.conf
+	sed -i --follow-symlinks "s/#SSLCertificateChainFile \/etc\/apache2\/ssl.crt\/server-ca.crt/SSLCertificateChainFile \/etc\/apache2\/ssl.crt\/server-ca.crt/g" /etc/apache2/sites-enabled/default-ssl.conf
 fi
 if [ -f "/etc/pki/tls/certs/localhost.crt" ]; then
 	cp /var/appliance/conf/appliance.certificate.pem /etc/pki/tls/certs/localhost.crt
