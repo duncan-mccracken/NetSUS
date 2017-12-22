@@ -1181,4 +1181,48 @@ elif [ "$(which yum 2>&-)" != '' ]; then
 fi
 ;;
 
+getHttpsPort)
+if [ -d "/etc/apache2/sites-enabled" ]; then
+	PORT=$(grep _default_ /etc/apache2/sites-available/default-ssl.conf | cut -d : -f 2 | sed -e 's/[^0-9]//g')
+fi
+if [ -d "/etc/httpd/conf.d" ]; then
+	PORT=$(grep _default_ /etc/httpd/conf.d/ssl.conf | cut -d : -f 2 | sed -e 's/[^0-9]//g')
+fi
+echo $PORT
+;;
+
+setHttpsPort)
+# $2: PORT
+if [ -d "/etc/apache2/sites-enabled" ]; then
+	sed -i "/Listen 80$/! s/Listen.*/Listen $2/g" /etc/apache2/ports.conf
+	sed -i --follow-symlinks "s/<VirtualHost _default_:.*>/<VirtualHost _default_:$2>/" /etc/apache2/sites-available/default-ssl.conf
+fi
+if [ -d "/etc/httpd/conf.d" ]; then
+	sed -i "s/Listen.*https/Listen $2 https/" /etc/httpd/conf.d/ssl.conf
+	sed -i "s/<VirtualHost _default_:.*>/<VirtualHost _default_:$2>/" /etc/httpd/conf.d/ssl.conf
+fi
+if [ "$(which ufw 2>&-)" != '' ]; then
+	ufw allow $2/tcp
+elif [ "$(which firewall-cmd 2>&-)" != '' ]; then
+	firewall-cmd --zone=public --add-port=$2/tcp
+	firewall-cmd --zone=public --add-port=$2/tcp --permanent
+else
+	service=$(grep -w $2/tcp /etc/services | awk '{print $1}')
+	if [ "$service" = '' ]; then
+		service=$2
+	fi
+	if iptables -L | grep DROP | grep -wq "tcp dpt:$service" ; then
+		iptables -D INPUT -p tcp --dport $2 -j DROP
+	fi
+	if ! iptables -L | grep ACCEPT | grep -wq "tcp dpt:$service" ; then
+		iptables -I INPUT -p tcp --dport $2 -j ACCEPT
+	fi
+	service iptables save
+fi
+;;
+
+getPortsInUse)
+echo $(lsof -i -P -n | grep LISTEN | awk -F : '{print $NF}' | awk '{print $1}' | sort -n -u)
+;;
+
 esac
