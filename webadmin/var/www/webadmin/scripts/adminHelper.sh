@@ -942,10 +942,39 @@ fi
 ;;
 
 # Certificates
+getSSLCertificate)
+openssl x509 -text -noout -in /var/appliance/conf/appliance.certificate.pem | grep '\(Issuer:\|Subject:\|Not After\)' | sed -e 's/.*Subject:/Owner:/' | sed -e 's/.*Issuer:/Issuer:/' | sed -e 's/.*Not After :/Expires:/'
+;;
+
 createCsr)
-common_name=$2
+cn="$2"
+if [ "$3" != '' ]; then
+	ou="$3"
+else
+	ou="."
+fi
+if [ "$4" != '' ]; then
+	o="$4"
+else
+	o="."
+fi
+if [ "$5" != '' ]; then
+	l="$5"
+else
+	l="."
+fi
+if [ "$6" != '' ]; then
+	st="$6"
+else
+	st="."
+fi
+if [ "$7" != '' ]; then
+	c="$7"
+else
+	c="."
+fi
 openssl genrsa -out /tmp/private.key 2048 > /dev/null 2>&1
-(echo .; echo .; echo .; echo .; echo .; echo "$common_name"; echo .; echo .; echo .;) | openssl req -new -key /tmp/private.key -out /tmp/certreq.csr > /dev/null 2>&1
+(echo "$c"; echo "$st"; echo "$l"; echo "$o"; echo "$ou"; echo "$cn"; echo; echo; echo;) | openssl req -new -key /tmp/private.key -out /tmp/certreq.csr > /dev/null 2>&1
 if [ "$(getent passwd www-data)" != '' ]; then
 	www_user=www-data
 elif [ "$(getent passwd apache)" != '' ]; then
